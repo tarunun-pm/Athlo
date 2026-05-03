@@ -1,0 +1,192 @@
+[
+    {
+        "id": "Contrast_Bath",
+        "name": "Contrast Bath Therapy",
+        "force": "static",
+        "level": "beginner",
+        "mechanic": "compound",
+        "equipment": "water immersion",
+        "primaryMuscles": ["joints", "muscles"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Prepare two tubs or buckets of water: one with hot water (38°C to 40°C) and one with cold water (10°C to 15°C).",
+            "Immerse the affected body part in the hot water for 3 to 4 minutes.",
+            "Immediately transfer the body part to the cold water and immerse for 1 minute.",
+            "Repeat this alternating cycle 3 to 5 times.",
+            "Always end the session with immersion in the cold water to help minimize residual inflammation."
+        ],
+        "category": "thermotherapy",
+        "images": []
+    },
+    {
+        "id": "Cryotherapy_Ice_Pack",
+        "name": "Cold Compress / Ice Pack",
+        "force": "static",
+        "level": "beginner",
+        "mechanic": "isolation",
+        "equipment": "ice pack",
+        "primaryMuscles": ["joints", "muscles", "tendons"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Wrap an ice pack or a sealed bag of crushed ice in a thin towel.",
+            "Apply the wrapped ice pack directly to the injured or painful area.",
+            "Leave it in place for 15 to 20 minutes.",
+            "Remove the ice pack and allow the skin temperature to return to normal before reapplying, if necessary."
+        ],
+        "category": "cryotherapy",
+        "images": []
+    },
+    {
+        "id": "TENS_Therapy",
+        "name": "TENS (Transcutaneous Electrical Nerve Stimulation)",
+        "force": "static",
+        "level": "intermediate",
+        "mechanic": "isolation",
+        "equipment": "TENS unit",
+        "primaryMuscles": ["nerves", "muscles"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Ensure the skin is clean and dry where the electrodes will be placed.",
+            "Place the TENS unit pads on the skin around the area of pain, ensuring they are at least 1 inch apart.",
+            "Turn on the TENS unit and slowly increase the intensity until you feel a strong but comfortable tingling sensation.",
+            "Run the therapy session for the prescribed duration (usually 15-30 minutes).",
+            "Turn off the unit before removing the electrodes from the skin."
+        ],
+        "category": "electrotherapy",
+        "images": []
+    },
+    {
+        "id": "Therapeutic_Ultrasound",
+        "name": "Therapeutic Ultrasound",
+        "force": "static",
+        "level": "advanced",
+        "mechanic": "isolation",
+        "equipment": "ultrasound machine",
+        "primaryMuscles": ["deep tissues", "ligaments", "tendons"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Apply a generous amount of conductive gel to the treatment area.",
+            "Set the ultrasound machine to the prescribed frequency and intensity.",
+            "Place the transducer head flat against the skin.",
+            "Move the transducer head continuously in slow, overlapping circles over the treatment area.",
+            "Continue the treatment for the prescribed duration (typically 5 to 10 minutes)."
+        ],
+        "category": "electrotherapy",
+        "images": []
+    },
+    {
+        "id": "Joint_Mobilization_Grade_1_2",
+        "name": "Joint Mobilization (Grades I-II)",
+        "force": "dynamic",
+        "level": "advanced",
+        "mechanic": "isolation",
+        "equipment": "treatment table",
+        "primaryMuscles": ["joints", "capsules"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Position the patient comfortably with the joint in an open-packed or resting position.",
+            "Support the surrounding limb to isolate the target joint.",
+            "Apply rhythmic, oscillating movements (small amplitude for Grade I, larger amplitude for Grade II) within the early range of motion.",
+            "Ensure the movements are smooth and pain-free.",
+            "Continue for 1-2 minutes per plane of motion."
+        ],
+        "category": "manual_therapy",
+        "images": []
+    },
+    {
+        "id": "Deep_Tissue_Friction_Massage",
+        "name": "Deep Tissue Friction Massage",
+        "force": "static",
+        "level": "advanced",
+        "mechanic": "isolation",
+        "equipment": "none",
+        "primaryMuscles": ["tendons", "ligaments", "fascia"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Identify the specific area of adhesion or scar tissue.",
+            "Apply deep, firm pressure across the fibers of the target tissue using fingers or thumbs.",
+            "Maintain consistent pressure while moving back and forth (preventing skin slipping).",
+            "Communicate with the patient about pressure comfort (it should be perceived as a 'good pain').",
+            "Continue for 5-10 minutes based on tissue response."
+        ],
+        "category": "manual_therapy",
+        "images": []
+    },
+    {
+        "id": "Dry_Needling",
+        "name": "Trigger Point Dry Needling",
+        "force": "static",
+        "level": "advanced",
+        "mechanic": "isolation",
+        "equipment": "monofilament needles",
+        "primaryMuscles": ["muscles", "fascia"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Identify the active myofascial trigger point through palpation.",
+            "Clean the skin over the target area.",
+            "Insert a sterile monofilament needle directly into the trigger point.",
+            "Observe for a local twitch response.",
+            "Leave the needle in place for a short duration or manipulate it to elicit further responses before removal."
+        ],
+        "category": "manual_therapy",
+        "images": []
+    },
+    {
+        "id": "Kinesiology_Taping_Knee",
+        "name": "Kinesiology Taping (Knee Support)",
+        "force": "static",
+        "level": "intermediate",
+        "mechanic": "isolation",
+        "equipment": "kinesiology tape",
+        "primaryMuscles": ["quadriceps", "patellar tendon"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Ensure the skin is clean, dry, and free of oils or lotions.",
+            "Position the knee in slight flexion.",
+            "Apply an anchor strip below the patella with 0% tension.",
+            "Stretch the tape to 50% tension and apply it around the lateral border of the patella, anchoring above.",
+            "Repeat the process around the medial border of the patella.",
+            "Rub the tape firmly to activate the adhesive."
+        ],
+        "category": "specialized",
+        "images": []
+    },
+    {
+        "id": "Foam_Rolling_IT_Band",
+        "name": "Foam Rolling (IT Band)",
+        "force": "push",
+        "level": "beginner",
+        "mechanic": "isolation",
+        "equipment": "foam roller",
+        "primaryMuscles": ["abductors"],
+        "secondaryMuscles": ["quadriceps"],
+        "instructions": [
+            "Lie on your side with the foam roller positioned under the outside of your thigh (IT band).",
+            "Support your upper body weight on your forearm.",
+            "Slowly roll from just below the hip down to just above the knee.",
+            "When you find a tender spot, pause and hold the pressure for 20-30 seconds until the discomfort lessens.",
+            "Continue rolling for 1-2 minutes per side."
+        ],
+        "category": "stretching",
+        "images": []
+    },
+    {
+        "id": "Heat_Pack",
+        "name": "Moist Heat Pack (Hot Compress)",
+        "force": "static",
+        "level": "beginner",
+        "mechanic": "isolation",
+        "equipment": "hot pack",
+        "primaryMuscles": ["muscles", "joints"],
+        "secondaryMuscles": [],
+        "instructions": [
+            "Prepare a moist heat pack or soak a towel in hot water.",
+            "Ensure the temperature is hot but comfortable, wrapping the pack in extra layers of towel to prevent burns.",
+            "Apply the heat pack to the stiff or aching area.",
+            "Leave in place for 15 to 20 minutes.",
+            "Check the skin periodically to ensure it is not becoming too red or irritated."
+        ],
+        "category": "thermotherapy",
+        "images": []
+    }
+]

@@ -1,0 +1,321 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================
+   THEME SYSTEM — CSS Custom Properties
+   ============================================= */
+
+/* --- MIDNIGHT (default dark) --- */
+:root {
+  /* Landing page colors mapped to dynamic app tokens */
+  --bg-primary: var(--app-background);
+  --bg-secondary: var(--app-surface);
+  --bg-card: var(--app-border);
+  --accent-blue: var(--app-primary);
+  --accent-glow: var(--app-glow);
+  --accent-orange: var(--app-warning);
+  --accent-orange-glow: rgba(245, 158, 11, 0.3);
+  --text-primary: var(--app-text-primary);
+  --text-secondary: var(--app-text-secondary);
+  --text-muted: var(--app-text-muted);
+  --border: var(--app-border-strong);
+  --border-accent: rgba(37, 99, 235, 0.3);
+  --success: var(--app-success);
+
+  /* App tokens */
+  --app-primary: #0066FF;
+  --app-primary-dark: #0052CC;
+  --app-primary-light: #E5F0FF;
+  --app-background: #16181C;
+  --app-surface: #1C1F26;
+  --app-border: #2A2E36;
+  --app-border-strong: #3C424E;
+  --app-text-primary: #F8FAFC;
+  --app-text-secondary: #A0AAB8;
+  --app-text-muted: #64748B;
+  --app-success: #10B981;
+  --app-warning: #F59E0B;
+  --app-error: #EF4444;
+  --app-glow: rgba(0, 102, 255, 0.4);
+}
+
+/* --- EMERALD NIGHT (dark) --- */
+[data-theme="emerald-night"] {
+  --app-primary: #10B981;
+  --app-primary-dark: #059669;
+  --app-primary-light: #D1FAE5;
+  --app-background: #0D1412;
+  --app-surface: #111C18;
+  --app-border: #1E3228;
+  --app-border-strong: #2D4A3A;
+  --app-text-primary: #F0FDF4;
+  --app-text-secondary: #86EFAC;
+  --app-text-muted: #4ADE80;
+  --app-glow: rgba(16, 185, 129, 0.4);
+}
+
+/* --- VIOLET DUSK (dark) --- */
+[data-theme="violet-dusk"] {
+  --app-primary: #8B5CF6;
+  --app-primary-dark: #7C3AED;
+  --app-primary-light: #EDE9FE;
+  --app-background: #110D18;
+  --app-surface: #1A152A;
+  --app-border: #2E2544;
+  --app-border-strong: #44396A;
+  --app-text-primary: #F5F3FF;
+  --app-text-secondary: #C4B5FD;
+  --app-text-muted: #7C6DB0;
+  --app-glow: rgba(139, 92, 246, 0.4);
+}
+
+/* --- CLINICAL WHITE (light) --- */
+[data-theme="clinical-white"] {
+  --app-primary: #2563EB;
+  --app-primary-dark: #1D4ED8;
+  --app-primary-light: #DBEAFE;
+  --app-background: #F8FAFC;
+  --app-surface: #FFFFFF;
+  --app-border: #E2E8F0;
+  --app-border-strong: #CBD5E1;
+  --app-text-primary: #0F172A;
+  --app-text-secondary: #475569;
+  --app-text-muted: #94A3B8;
+  --app-success: #059669;
+  --app-warning: #D97706;
+  --app-error: #DC2626;
+  --app-glow: rgba(37, 99, 235, 0.25);
+}
+
+/* --- SUNRISE (light, orange) --- */
+[data-theme="sunrise"] {
+  --app-primary: #EA580C;
+  --app-primary-dark: #C2410C;
+  --app-primary-light: #FFF7ED;
+  --app-background: #FFFBF5;
+  --app-surface: #FFFFFF;
+  --app-border: #FED7AA;
+  --app-border-strong: #FDBA74;
+  --app-text-primary: #431407;
+  --app-text-secondary: #9A3412;
+  --app-text-muted: #C2410C;
+  --app-success: #059669;
+  --app-warning: #D97706;
+  --app-error: #DC2626;
+  --app-glow: rgba(234, 88, 12, 0.25);
+}
+
+/* --- GOLDEN (light, amber/yellow) --- */
+[data-theme="golden"] {
+  --app-primary: #D97706;
+  --app-primary-dark: #B45309;
+  --app-primary-light: #FFFBEB;
+  --app-background: #FFFDF5;
+  --app-surface: #FFFFFF;
+  --app-border: #FDE68A;
+  --app-border-strong: #FCD34D;
+  --app-text-primary: #451A03;
+  --app-text-secondary: #92400E;
+  --app-text-muted: #B45309;
+  --app-success: #059669;
+  --app-warning: #D97706;
+  --app-error: #DC2626;
+  --app-glow: rgba(217, 119, 6, 0.25);
+}
+
+/* --- MINT (light, teal) --- */
+[data-theme="mint"] {
+  --app-primary: #0D9488;
+  --app-primary-dark: #0F766E;
+  --app-primary-light: #CCFBF1;
+  --app-background: #F0FDFA;
+  --app-surface: #FFFFFF;
+  --app-border: #99F6E4;
+  --app-border-strong: #5EEAD4;
+  --app-text-primary: #042F2E;
+  --app-text-secondary: #115E59;
+  --app-text-muted: #0F766E;
+  --app-success: #059669;
+  --app-warning: #D97706;
+  --app-error: #DC2626;
+  --app-glow: rgba(13, 148, 136, 0.25);
+}
+
+/* --- ROSE (light, coral) --- */
+[data-theme="rose"] {
+  --app-primary: #E11D48;
+  --app-primary-dark: #BE123C;
+  --app-primary-light: #FFF1F2;
+  --app-background: #FFF5F7;
+  --app-surface: #FFFFFF;
+  --app-border: #FECDD3;
+  --app-border-strong: #FDA4AF;
+  --app-text-primary: #4C0519;
+  --app-text-secondary: #881337;
+  --app-text-muted: #BE123C;
+  --app-success: #059669;
+  --app-warning: #D97706;
+  --app-error: #DC2626;
+  --app-glow: rgba(225, 29, 72, 0.25);
+}
+
+/* =============================================
+   BASE LAYER
+   ============================================= */
+@layer base {
+  body {
+    background-color: var(--app-background);
+    color: var(--app-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* =============================================
+   LANDING PAGE ANIMATIONS
+   ============================================= */
+@keyframes markerPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(249, 115, 22, 0);
+    transform: scale(1.15);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
+    transform: scale(1);
+  }
+}
+
+@keyframes silhouetteBreath {
+
+  0%,
+  100% {
+    opacity: 0.05;
+  }
+
+  50% {
+    opacity: 0.08;
+  }
+}
+
+@keyframes floatY {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+/* =============================================
+   SHARED APP COMPONENT STYLES
+   ============================================= */
+@layer components {
+  .card {
+    @apply rounded-[24px] shadow-none overflow-hidden;
+    background-color: var(--app-surface);
+    border: 1px solid var(--app-border);
+  }
+
+  .glass-card {
+    @apply backdrop-blur-md rounded-[24px] shadow-none;
+    background-color: color-mix(in srgb, var(--app-surface) 90%, transparent);
+    border: 1px solid var(--app-border);
+  }
+
+  .btn-primary {
+    @apply text-white font-medium px-6 py-3 rounded-[14px] transition-colors flex items-center justify-center;
+    background-color: var(--app-primary);
+  }
+  .btn-primary:hover {
+    background-color: var(--app-primary-dark);
+  }
+
+  .btn-outline {
+    @apply font-medium px-6 py-3 rounded-[14px] transition-colors flex items-center justify-center;
+    border: 1px solid var(--app-border);
+    color: var(--app-text-primary);
+    background-color: color-mix(in srgb, var(--app-surface) 50%, transparent);
+  }
+  .btn-outline:hover {
+    border-color: var(--app-border-strong);
+  }
+
+  .input-field {
+    @apply rounded-[14px] px-4 py-3 w-full transition-all;
+    background-color: var(--app-background);
+    border: 1px solid var(--app-border);
+    color: var(--app-text-primary);
+  }
+  .input-field::placeholder {
+    color: var(--app-text-muted);
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--app-primary);
+    box-shadow: 0 0 0 1px var(--app-primary);
+  }
+
+  .pill {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-full border border-transparent text-sm font-medium transition-colors cursor-pointer;
+    color: var(--app-text-secondary);
+    background-color: var(--app-background);
+  }
+  .pill:hover {
+    background-color: var(--app-border);
+  }
+
+  .pill-active {
+    background-color: var(--app-primary) !important;
+    color: #FFFFFF !important;
+    border-color: var(--app-primary) !important;
+  }
+
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Landing-specific utilities */
+  .landing-section {
+    padding: 120px 0;
+  }
+
+  .landing-section-sm {
+    padding: 100px 0;
+  }
+
+  .landing-eyebrow {
+    font-family: var(--font-dm-sans), sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent-blue);
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .landing-headline {
+    font-family: var(--font-syne), sans-serif;
+    font-weight: 700;
+    font-size: clamp(36px, 4vw, 54px);
+    line-height: 1.05;
+    color: var(--text-primary);
+  }
+
+  .injury-marker-dot {
+    animation: markerPulse 2s ease-in-out infinite;
+  }
+}
