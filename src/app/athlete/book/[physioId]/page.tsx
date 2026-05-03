@@ -15,14 +15,17 @@ export default async function BookingPage({ params }: { params: { physioId: stri
         notFound();
     }
 
-    const { data: slots } = await supabase
-        .from('availability_slots')
-        .select('day_of_week, block')
-        .eq('physio_id', params.physioId)
-        .eq('is_active', true);
+    // Get today's date context string (YYYY-MM-DD)
+    const today = new Date().toISOString().split('T')[0];
 
-    // Generate the next 14 days of actual dates that match the physio's active days of the week
-    // For simplicity since it's an MVP, pass the slots down and let the client generate valid dates
+    const { data: slots } = await supabase
+        .from('time_slots')
+        .select('id, slot_date, start_time, end_time')
+        .eq('physio_id', params.physioId)
+        .eq('status', 'open')
+        .gte('slot_date', today)
+        .order('slot_date', { ascending: true })
+        .order('start_time', { ascending: true });
 
     return (
         <div className="pt-4">

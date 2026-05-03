@@ -4,11 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
-import { Activity, Plus, FileText, CheckCircle2, Circle, TrendingDown, ArrowLeft, Loader2, GripVertical, Calendar, Clock, Link as LinkIcon } from 'lucide-react';
+import { Activity, Plus, FileText, CheckCircle2, Circle, TrendingDown, ArrowLeft, Loader2, GripVertical, Calendar, Clock, Link as LinkIcon, CalendarPlus } from 'lucide-react';
 import { createNotification } from '@/lib/notifications';
 import TreatmentLibraryModal from '@/components/treatments/TreatmentLibraryModal';
 import { PrescribedTreatment } from '@/lib/treatmentLibrary';
 import CaseReportGenerator from '@/components/reports/CaseReportGenerator';
+import ScheduleSessionModal from '@/components/calendar/ScheduleSessionModal';
 
 import {
   DndContext,
@@ -150,6 +151,7 @@ export default function CaseDetailClient({
     const athlete = caseFile.athlete_profiles;
     
     const [activeTab, setActiveTab] = useState<'overview' | 'plan' | 'notes' | 'progress' | 'milestones'>('overview');
+    const [showFollowUpModal, setShowFollowUpModal] = useState(false);
 
     // Milestones State
     const [milestones, setMilestones] = useState<Milestone[]>(initialMilestones || []);
@@ -334,13 +336,24 @@ export default function CaseDetailClient({
                         {athlete.first_name} {athlete.last_name} <span className="text-border">•</span> {caseFile.body_part}
                     </p>
                 </div>
-                <CaseReportGenerator
-                    caseFile={caseFile}
-                    treatmentPlans={plans}
-                    sessionNotes={notes}
-                    progressEntries={initialProgressEntries}
-                    milestones={milestones}
-                />
+                <div className="flex items-center gap-3">
+                    {isPhysio && (
+                        <button 
+                            onClick={() => setShowFollowUpModal(true)}
+                            className="btn-primary shadow-glow hidden sm:flex items-center gap-2"
+                        >
+                            <CalendarPlus size={16} />
+                            <span>Schedule Follow-Up</span>
+                        </button>
+                    )}
+                    <CaseReportGenerator
+                        caseFile={caseFile}
+                        treatmentPlans={plans}
+                        sessionNotes={notes}
+                        progressEntries={initialProgressEntries}
+                        milestones={milestones}
+                    />
+                </div>
             </div>
 
             {/* Tabs */}
@@ -694,6 +707,15 @@ export default function CaseDetailClient({
                 )}
 
             </div>
+
+            {showFollowUpModal && (
+                <ScheduleSessionModal
+                    physioId={caseFile.physio_id}
+                    prefillAthleteId={caseFile.athlete_id}
+                    prefillCaseId={caseFile.id}
+                    onClose={() => setShowFollowUpModal(false)}
+                />
+            )}
         </div>
     );
 }

@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import {
     Bell, Calendar, CheckCircle2, FileText, Activity,
-    Star, ShieldCheck, X, BookOpen, AlertCircle
+    Star, ShieldCheck, X, BookOpen, AlertCircle, Siren, UserPlus, RefreshCw
 } from 'lucide-react';
 
 type Notification = {
@@ -31,6 +31,18 @@ const ICON_MAP: Record<string, any> = {
     review_received: Star,
     verification_approved: ShieldCheck,
     verification_rejected: AlertCircle,
+    // New Types
+    emergency_request_received: Siren,
+    emergency_request_accepted: CheckCircle2,
+    emergency_request_cascade: Siren,
+    emergency_no_match: AlertCircle,
+    followup_scheduled: Calendar,
+    client_invite_sent: UserPlus,
+    client_invite_accepted: UserPlus,
+    client_invite_expired: AlertCircle,
+    pending_slot_released: RefreshCw,
+    recurring_series_created: RefreshCw,
+    emergency_mode_toggled: Siren,
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -45,6 +57,18 @@ const COLOR_MAP: Record<string, string> = {
     review_received: 'text-warning',
     verification_approved: 'text-success',
     verification_rejected: 'text-error',
+    // New Types
+    emergency_request_received: 'text-error animate-pulse',
+    emergency_request_accepted: 'text-success',
+    emergency_request_cascade: 'text-error',
+    emergency_no_match: 'text-text-muted',
+    followup_scheduled: 'text-primary',
+    client_invite_sent: 'text-primary',
+    client_invite_accepted: 'text-success',
+    client_invite_expired: 'text-text-muted',
+    pending_slot_released: 'text-text-muted',
+    recurring_series_created: 'text-primary',
+    emergency_mode_toggled: 'text-warning',
 };
 
 export default function NotificationBell() {

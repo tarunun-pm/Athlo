@@ -2,18 +2,35 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, addDays, getDay } from 'date-fns';
-import { Calendar, Clock, CreditCard, ShieldCheck, CheckCircle2, Loader2, FileText } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { Calendar, Clock, ShieldCheck, CheckCircle2, Loader2, FileText, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { createNotification } from '@/lib/notifications';
 
-export default function BookingClient({ physio, availableSlots }: { physio: any, availableSlots: any[] }) {
+type TimeSlot = {
+    id: string;
+    slot_date: string;
+    start_time: string;
+    end_time: string;
+};
+
+export default function BookingClient({ physio, availableSlots }: { physio: any, availableSlots: TimeSlot[] }) {
     const router = useRouter();
     const supabase = createClient();
 
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+    // Group available slots by date
+    const slotsByDate = availableSlots.reduce((acc, slot) => {
+        if (!acc[slot.slot_date]) acc[slot.slot_date] = [];
+        acc[slot.slot_date].push(slot);
+        return acc;
+    }, {} as Record<string, TimeSlot[]>);
+
+    const availableDates = Object.keys(slotsByDate).sort();
+
+    const [selectedDate, setSelectedDate] = useState<string | null>(availableDates[0] || null);
+    const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
     const [selectedMode, setSelectedMode] = useState<string>(physio.consultation_modes?.[0] || '');
+    const [injuryDesc, setInjuryDesc] = useState('');
 
     const [showConsent, setShowConsent] = useState(false);
     const [consentAgreed, setConsentAgreed] = useState(false);
@@ -21,27 +38,8 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Generate next 14 days
-    const upcomingDays = Array.from({ length: 14 }).map((_, i) => addDays(new Date(), i + 1));
-
-    // Filter days that the physio actually works based on availability_slots
-    // Note: day_of_week is 0-6 (Mon-Sun in UI, but Date.getDay() gives 0=Sun, 1=Mon...6=Sat)
-    // Let's assume UI mapping was 0=Mon, 6=Sun. 
-    // Map Date.getDay() to our index: Mon=0, Tue=1... Sun=6
-    const mapDateDay = (d: Date) => (d.getDay() === 0 ? 6 : d.getDay() - 1);
-
-    const validDays = upcomingDays.filter(d =>
-        availableSlots.some(s => s.day_of_week === mapDateDay(d))
-    );
-
-    const getBlocksForDate = (d: Date | null) => {
-        if (!d) return [];
-        const targetDayIndex = mapDateDay(d);
-        return availableSlots.filter(s => s.day_of_week === targetDayIndex).map(s => s.block);
-    };
-
     const handleOpenConsent = () => {
-        if (!selectedDate || !selectedBlock || !selectedMode) {
+        if (!selectedDate || !selectedSlot || !selectedMode) {
             setError('Please select a date, time, and consultation mode.');
             return;
         }
@@ -50,8 +48,9 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
     };
 
     const handleConfirmBooking = async () => {
-        if (!consentAgreed) return;
+        if (!consentAgreed || !selectedSlot) return;
         setIsProcessing(true);
+        setError(null);
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -63,22 +62,23 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
                 type: 'pre_session'
             });
 
-            // Simulate slight delay for better UX
-            await new Promise(res => setTimeout(res, 800));
-
-            // 2. Create Session
-            const { error: sessionError } = await supabase.from('sessions').insert({
-                physio_id: physio.id,
-                athlete_id: user.id,
-                scheduled_at: selectedDate?.toISOString(),
-                status: 'upcoming',
-                amount: physio.consultation_rate,
-                consultation_mode: selectedMode
+            // 2. Call Atomic RPC
+            const { data: rpcData, error: rpcError } = await supabase.rpc('book_slot_atomic', {
+                p_slot_id: selectedSlot.id,
+                p_athlete_id: user.id,
+                p_mode: selectedMode,
+                p_injury: injuryDesc || null
             });
 
-            if (sessionError) throw sessionError;
+            if (rpcError) throw rpcError;
 
-            // Notify the physio about the new booking
+            // RPC returns JSON object: {success: boolean, error?: string, session_id?: UUID}
+            if (!rpcData.success) {
+                // E.g., The slot was just taken
+                throw new Error(rpcData.error || "Failed to book this slot.");
+            }
+
+            // Notify the physio
             const { data: athleteProfile } = await supabase
                 .from('athlete_profiles')
                 .select('first_name, last_name')
@@ -89,7 +89,7 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
                 userId: physio.id,
                 type: 'booking_new',
                 title: 'New Session Booked',
-                message: `${athleteProfile?.first_name || 'An athlete'} ${athleteProfile?.last_name || ''} booked a ${selectedMode} session on ${selectedDate ? format(selectedDate, 'MMM dd') : 'upcoming date'}.`,
+                message: `${athleteProfile?.first_name || 'An athlete'} ${athleteProfile?.last_name || ''} booked a ${selectedMode} session for ${format(parseISO(selectedSlot.slot_date), 'MMM dd')}.`,
                 link: '/physio/sessions',
             });
 
@@ -99,8 +99,13 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
             setError(err.message || "Booking failed. Please try again.");
             setIsProcessing(false);
             setShowConsent(false);
+            
+            // If the slot was taken, deselect it so they must pick another
+            setSelectedSlot(null);
         }
     };
+
+    const currentDaySlots = selectedDate ? slotsByDate[selectedDate] : [];
 
     return (
         <div className="max-w-6xl mx-auto pb-24">
@@ -111,8 +116,9 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
             </div>
 
             {error && (
-                <div className="bg-error/10 text-error p-4 rounded-[14px] border border-error/50 mb-8">
-                    {error}
+                <div className="bg-error/10 text-error p-4 rounded-[14px] border border-error/50 mb-8 flex items-center gap-3">
+                    <AlertTriangle size={20} />
+                    <p className="font-medium">{error}</p>
                 </div>
             )}
 
@@ -126,17 +132,18 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
                             <Calendar className="text-primary" size={20} /> Select Date
                         </h2>
                         <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                            {validDays.length === 0 ? (
+                            {availableDates.length === 0 ? (
                                 <p className="text-text-muted text-sm">No availability slots set by this physio.</p>
                             ) : (
-                                validDays.map(d => {
-                                    const isSelected = selectedDate?.toDateString() === d.toDateString();
+                                availableDates.map(dateStr => {
+                                    const d = parseISO(dateStr);
+                                    const isSelected = selectedDate === dateStr;
                                     return (
                                         <button
-                                            key={d.toISOString()}
+                                            key={dateStr}
                                             onClick={() => {
-                                                setSelectedDate(d);
-                                                setSelectedBlock(null);
+                                                setSelectedDate(dateStr);
+                                                setSelectedSlot(null); // Reset time when date changes
                                             }}
                                             className={`min-w-[80px] shrink-0 p-4 rounded-[16px] border transition-all text-center ${isSelected
                                                     ? 'bg-primary border-primary text-white shadow-glow'
@@ -159,44 +166,62 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
 
                     <div className={`card p-6 md:p-8 transition-opacity ${!selectedDate ? 'opacity-50 pointer-events-none' : ''}`}>
                         <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <Clock className="text-primary" size={20} /> Select Time Block
+                            <Clock className="text-primary" size={20} /> Select Time
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {getBlocksForDate(selectedDate).map(block => (
-                                <button
-                                    key={block}
-                                    onClick={() => setSelectedBlock(block)}
-                                    className={`p-4 rounded-[14px] border transition-all text-left ${selectedBlock === block
-                                            ? 'bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(0,102,255,0.4)]'
-                                            : 'bg-background border-border hover:border-primary/50 text-text-secondary'
-                                        }`}
-                                >
-                                    <div className="font-bold text-white capitalize mb-1">{block}</div>
-                                    <div className="text-xs opacity-80">
-                                        {block === 'morning' ? '6am - 12pm' : block === 'afternoon' ? '12pm - 5pm' : '5pm - 10pm'}
-                                    </div>
-                                </button>
-                            ))}
-                            {selectedDate && getBlocksForDate(selectedDate).length === 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {currentDaySlots?.map(slot => {
+                                const startStr = slot.start_time.substring(0, 5);
+                                // Simple 12-hour format logic for substring
+                                const hour = parseInt(startStr.split(':')[0]);
+                                const ampm = hour >= 12 ? 'PM' : 'AM';
+                                const hour12 = hour % 12 || 12;
+                                const timeLabel = `${hour12}:00 ${ampm}`;
+
+                                return (
+                                    <button
+                                        key={slot.id}
+                                        onClick={() => setSelectedSlot(slot)}
+                                        className={`p-3 rounded-xl border transition-all text-center font-medium ${selectedSlot?.id === slot.id
+                                                ? 'bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(37,99,235,0.2)]'
+                                                : 'bg-background border-border hover:border-primary/50 text-text-secondary'
+                                            }`}
+                                    >
+                                        {timeLabel}
+                                    </button>
+                                );
+                            })}
+                            {!currentDaySlots?.length && selectedDate && (
                                 <p className="text-sm text-text-muted col-span-3">No times available on this date.</p>
                             )}
                         </div>
                     </div>
 
-                    <div className="card p-6 md:p-8">
-                        <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                            <ShieldCheck className="text-primary" size={20} /> Consultation Mode
-                        </h2>
-                        <div className="flex flex-wrap gap-3">
-                            {physio.consultation_modes?.map((m: string) => (
-                                <button
-                                    key={m}
-                                    onClick={() => setSelectedMode(m)}
-                                    className={`pill py-3 px-5 text-sm ${selectedMode === m ? 'bg-primary text-white border-primary shadow-glow' : 'bg-background hover:border-text-muted'}`}
-                                >
-                                    {m}
-                                </button>
-                            ))}
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="card p-6 md:p-8">
+                            <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                <ShieldCheck className="text-primary" size={20} /> Consultation Mode
+                            </h2>
+                            <div className="flex flex-col gap-3">
+                                {physio.consultation_modes?.map((m: string) => (
+                                    <label key={m} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${selectedMode === m ? 'border-primary bg-primary/10' : 'border-border bg-background hover:border-text-muted'}`}>
+                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedMode === m ? 'border-primary' : 'border-text-muted'}`}>
+                                            {selectedMode === m && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                        </div>
+                                        <input type="radio" className="hidden" checked={selectedMode === m} onChange={() => setSelectedMode(m)} />
+                                        <span className="text-sm font-medium text-white">{m}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="card p-6 md:p-8 flex flex-col">
+                            <h2 className="text-lg font-bold text-white mb-4">Injury Description <span className="text-text-muted text-sm font-normal">(Optional)</span></h2>
+                            <textarea 
+                                value={injuryDesc}
+                                onChange={(e) => setInjuryDesc(e.target.value)}
+                                placeholder="Briefly describe why you are booking this session..."
+                                className="w-full bg-background border border-border rounded-xl p-4 text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-primary resize-none flex-1 min-h-[120px]"
+                            />
                         </div>
                     </div>
 
@@ -214,11 +239,13 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-text-secondary">Date</span>
-                                <span className="text-white font-medium text-right">{selectedDate ? format(selectedDate, 'MMM dd, yyyy') : '—'}</span>
+                                <span className="text-white font-medium text-right">{selectedDate ? format(parseISO(selectedDate), 'MMM dd, yyyy') : '—'}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-text-secondary">Time</span>
-                                <span className="text-white font-medium text-right capitalize">{selectedBlock || '—'}</span>
+                                <span className="text-white font-medium text-right">
+                                    {selectedSlot ? `${parseInt(selectedSlot.start_time.split(':')[0]) % 12 || 12}:00 ${parseInt(selectedSlot.start_time.split(':')[0]) >= 12 ? 'PM' : 'AM'}` : '—'}
+                                </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-text-secondary">Mode</span>
@@ -233,7 +260,7 @@ export default function BookingClient({ physio, availableSlots }: { physio: any,
 
                         <button
                             onClick={handleOpenConsent}
-                            disabled={!selectedDate || !selectedBlock || !selectedMode}
+                            disabled={!selectedDate || !selectedSlot || !selectedMode}
                             className="btn-primary w-full flex items-center justify-center gap-2 shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <CheckCircle2 size={18} /> Confirm Booking

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { Search, MapPin, Star, Filter, Calendar, CheckCircle2 } from 'lucide-react';
+import { Search, MapPin, Star, Filter, Calendar, CheckCircle2, Clock } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import SearchFilters from '@/components/athlete/SearchFilters';
 
 export const revalidate = 0;
@@ -37,6 +38,27 @@ export default async function AthleteSearchPage({
             p.first_name?.toLowerCase().includes(queryLower) || 
             p.last_name?.toLowerCase().includes(queryLower)
         );
+    }
+
+    // Fetch exact next available timeslot for each physio
+    const physioIds = physios?.map((p: any) => p.id) || [];
+    let nextSlots: Record<string, any> = {};
+    if (physioIds.length > 0) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const { data: openSlots } = await supabase
+            .from('time_slots')
+            .select('physio_id, slot_date, start_time')
+            .eq('status', 'open')
+            .in('physio_id', physioIds)
+            .gte('slot_date', todayStr)
+            .order('slot_date', { ascending: true })
+            .order('start_time', { ascending: true });
+            
+        openSlots?.forEach(slot => {
+            if (!nextSlots[slot.physio_id]) {
+                nextSlots[slot.physio_id] = slot;
+            }
+        });
     }
 
     return (
@@ -99,6 +121,17 @@ export default async function AthleteSearchPage({
                                         )}
                                     </div>
                                 </div>
+                                
+                                {nextSlots[p.id] ? (
+                                    <div className="text-xs text-primary font-medium bg-primary/10 py-1.5 px-3 rounded-lg inline-flex items-center gap-1.5 mt-2 border border-primary/20">
+                                        <Clock size={12} />
+                                        Next available: <span className="font-bold">{format(parseISO(nextSlots[p.id].slot_date), 'MMM d')} at {parseInt(nextSlots[p.id].start_time.split(':')[0]) % 12 || 12}:{nextSlots[p.id].start_time.split(':')[1]} {parseInt(nextSlots[p.id].start_time.split(':')[0]) >= 12 ? 'PM' : 'AM'}</span>
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-text-muted mt-2 border border-border bg-surface py-1.5 px-3 rounded-lg inline-flex items-center">
+                                        No slots available within 14 days
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">

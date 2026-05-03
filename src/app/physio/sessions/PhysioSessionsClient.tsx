@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, isToday } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
-import { Calendar, CheckCircle2, Clock, Video, MapPin, Loader2, FileText, User } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Video, MapPin, Loader2, FileText, User, CalendarPlus } from 'lucide-react';
 import { createNotification } from '@/lib/notifications';
+import ScheduleSessionModal from '@/components/calendar/ScheduleSessionModal';
 
 type Session = {
     id: string;
@@ -24,8 +25,16 @@ type Session = {
 export default function PhysioSessionsClient({ initialSessions }: { initialSessions: any[] }) {
     const [sessions, setSessions] = useState<Session[]>(initialSessions);
     const [actionId, setActionId] = useState<string | null>(null);
+    const [followUpAthleteId, setFollowUpAthleteId] = useState<string | null>(null);
+    const [physioId, setPhysioId] = useState<string>('');
     const router = useRouter();
     const supabase = createClient();
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({data}) => {
+            if (data.user) setPhysioId(data.user.id);
+        });
+    }, []);
 
     // Grouping
     const todaySessions = sessions.filter(s => s.status === 'upcoming' && isToday(new Date(s.scheduled_at)));
@@ -105,12 +114,20 @@ export default function PhysioSessionsClient({ initialSessions }: { initialSessi
                                 </button>
                             )}
                             {type === 'completed' && (
-                                <button
-                                    onClick={() => router.push(`/physio/patients/${s.athlete_id}`)}
-                                    className="btn-outline gap-2 text-xs w-full md:w-auto justify-center hover:bg-success/10 hover:text-success hover:border-success/30"
-                                >
-                                    <FileText size={16}/> Add Notes
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => router.push(`/physio/patients/${s.athlete_id}`)}
+                                        className="btn-outline gap-2 text-xs w-full md:w-auto justify-center hover:bg-success/10 hover:text-success hover:border-success/30"
+                                    >
+                                        <FileText size={16}/> Add Notes
+                                    </button>
+                                    <button
+                                        onClick={() => setFollowUpAthleteId(s.athlete_id)}
+                                        className="btn-primary gap-2 text-xs w-full md:w-auto justify-center shadow-glow"
+                                    >
+                                        <CalendarPlus size={16}/> Follow-Up
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -168,6 +185,14 @@ export default function PhysioSessionsClient({ initialSessions }: { initialSessi
                     )}
                 </div>
             </section>
+
+            {followUpAthleteId && physioId && (
+                <ScheduleSessionModal
+                    physioId={physioId}
+                    prefillAthleteId={followUpAthleteId}
+                    onClose={() => setFollowUpAthleteId(null)}
+                />
+            )}
 
         </div>
     );

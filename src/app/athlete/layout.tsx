@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Settings, User } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
+import EmergencyButton from '@/components/emergency/EmergencyButton';
 
 export default function AthleteLayout({
     children,
@@ -50,6 +51,8 @@ export default function AthleteLayout({
                     </nav>
 
                     <div className="flex items-center gap-4">
+                        <EmergencyButton />
+                        <div className="w-px h-6 bg-border/50 mx-2 hidden sm:block"></div>
                         <NotificationBell />
                         <Link href="/athlete/profile?tab=settings" className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:bg-surface hover:text-text-primary transition-colors">
                             <Settings size={20} />

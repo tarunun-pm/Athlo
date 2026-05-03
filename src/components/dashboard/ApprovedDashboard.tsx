@@ -2,13 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Calendar, Wallet, User as UserIcon, Activity, FileText, ChevronRight } from 'lucide-react';
+import { 
+    CheckCircle2, 
+    Calendar, 
+    Users, 
+    Activity, 
+    FileText, 
+    TrendingUp, 
+    Star, 
+    Clock
+} from 'lucide-react';
+import StatCard from './StatCard';
+import DonutChart from './charts/DonutChart';
+import TrendLineChart from './charts/TrendLineChart';
+import ProfileSidebar from './ProfileSidebar';
+import AvatarStrip from './AvatarStrip';
+import RatingList from './RatingList';
+import ScheduleTimeline from './ScheduleTimeline';
+import EarningsCard from './EarningsCard';
+import EmergencyToggle from '../emergency/EmergencyToggle';
 
 export default function ApprovedDashboard({ profile, activeCases = [] }: { profile: any, activeCases?: any[] }) {
     const [showBanner, setShowBanner] = useState(false);
 
     useEffect(() => {
-        // Show banner only on first load after approval
         const hasSeen = localStorage.getItem(`seen_approval_${profile.id}`);
         if (!hasSeen) {
             setShowBanner(true);
@@ -16,65 +33,179 @@ export default function ApprovedDashboard({ profile, activeCases = [] }: { profi
         }
     }, [profile.id]);
 
-    return (
-        <div className="space-y-6">
+    // Mock/Calculated Data for Preview
+    // In a real scenario, these would come from the RCP functions
+    const stats = {
+        activeCases: activeCases.length,
+        newBookings: 8,
+        completedSessions: 124,
+        avgRating: 4.9,
+        totalEarnings: 82400,
+        monthlyEarnings: 12500
+    };
 
-            {/* First Load Success Banner */}
+    const sessionTrend = [
+        { month: 'Jan', count: 18 },
+        { month: 'Feb', count: 25 },
+        { month: 'Mar', count: 21 },
+        { month: 'Apr', count: 32 },
+        { month: 'May', count: 28 },
+        { month: 'Jun', count: 40 }
+    ];
+
+    const sessionDistribution = [
+        { name: 'Online', value: 75, color: '#2563EB' },
+        { name: 'In-Person', value: 49, color: '#10B981' }
+    ];
+
+    const mockSchedule = [
+        { id: '1', time: new Date(new Date().setHours(10, 0)), title: 'A. Sharma (ACL)', type: 'Online', duration: 45 },
+        { id: '2', time: new Date(new Date().setHours(11, 30)), title: 'R. Verma (MT)', type: 'In-Person', duration: 60 },
+        { id: '3', time: new Date(new Date().setHours(14, 0)), title: 'K. Singh (Shoulder)', type: 'Online', duration: 30 }
+    ];
+
+    return (
+        <div className="space-y-8 animate-in fade-in duration-700">
+
+            {/* Banner */}
             {showBanner && (
-                <div className="bg-success/10 border border-success/30 p-4 rounded-xl flex items-start gap-4 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                <div className="bg-success/10 border border-success/30 p-4 rounded-xl flex items-start gap-4 shadow-[0_0_20px_rgba(16,185,129,0.1)] mb-6">
                     <CheckCircle2 className="text-success shrink-0 mt-0.5" size={24} />
                     <div className="flex-1">
                         <h3 className="font-bold text-success mb-1">You're live on Athlo!</h3>
-                        <p className="text-sm text-success/80">
-                            Your profile has been approved. Athletes near you can now find and book your services.
-                        </p>
+                        <p className="text-sm text-success/80">Your profile is approved and matching with athletes near you.</p>
                     </div>
                     <button onClick={() => setShowBanner(false)} className="text-success/50 hover:text-success pb-2 px-2">&times;</button>
                 </div>
             )}
 
-            {/* Main Dashboard Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Left Column (Stats/Quick Links) */}
-                <div className="lg:col-span-1 space-y-6">
-
-                    <div className="card p-6 border-transparent bg-gradient-to-br from-surface to-background shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-                        <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mb-4 border border-primary/50">
-                            <UserIcon size={32} />
-                        </div>
-                        <h3 className="text-lg font-bold text-white mb-1">Dr. {profile.first_name} {profile.last_name}</h3>
-                        <p className="text-sm text-primary font-medium">{profile.sport_specializations[0]} Specialist</p>
-
-                        <div className="mt-6 pt-6 border-t border-border space-y-3">
-                            <Link href="/physio/profile" className="text-sm text-text-secondary hover:text-white flex items-center justify-between group">
-                                Edit Public Profile
-                                <span className="text-border group-hover:text-primary transition-colors">→</span>
-                            </Link>
-                            <Link href="/physio/availability" className="text-sm text-text-secondary hover:text-white flex items-center justify-between group">
-                                Manage Schedule
-                                <span className="text-border group-hover:text-primary transition-colors">→</span>
-                            </Link>
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                
+                {/* PROFILE SIDEBAR */}
+                <div className="lg:col-span-1">
+                    <ProfileSidebar 
+                        id={profile.id}
+                        firstName={profile.first_name}
+                        lastName={profile.last_name}
+                        role="physio"
+                        specialization={profile.sport_specializations?.[0] || 'Sports Specialist'}
+                        location={profile.location_locality || 'Delhi NCR'}
+                        rating={stats.avgRating}
+                        avatarInitials={`${profile.first_name?.[0]}${profile.last_name?.[0]}`}
+                        isVerified={true}
+                        stats={[
+                            { label: 'Cases', value: stats.activeCases },
+                            { label: 'Followers', value: '2.1k' }
+                        ]}
+                    />
+                    <div className="mt-6">
+                        <EmergencyToggle initialStatus={profile.emergency_opt_in ?? true} physioId={profile.id} />
                     </div>
-
-                    <div className="card p-6 flex flex-col justify-between h-40">
-                        <div className="flex items-center justify-between">
-                            <div className="w-10 h-10 rounded-full bg-[#10B981]/10 flex items-center justify-center text-success">
-                                <Wallet size={20} />
-                            </div>
-                            <span className="text-xs font-mono text-success uppercase font-bold tracking-wider">Earnings</span>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-syne font-bold text-white mb-1">₹0</div>
-                            <p className="text-xs text-text-muted">Available for payout</p>
-                        </div>
-                    </div>
-
                 </div>
 
-                {/* Right Column (Core Actions / Feeds) */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* MAIN CONTENT AREA */}
+                <div className="lg:col-span-3 space-y-8">
+                    
+                    {/* TOP STATS ROW */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <StatCard 
+                            title="Active Cases" 
+                            value={stats.activeCases} 
+                            icon={<Activity size={20} />}
+                            trend={{ value: '12%', label: 'vs last month', isPositive: true }}
+                        />
+                        <StatCard 
+                            title="New Bookings" 
+                            value={stats.newBookings} 
+                            icon={<Calendar size={20} />}
+                            trend={{ value: '8%', label: 'growth', isPositive: true }}
+                        />
+                        <StatCard 
+                            title="Total Sessions" 
+                            value={stats.completedSessions} 
+                            icon={<Users size={20} />}
+                        />
+                        <StatCard 
+                            title="Avg Rating" 
+                            value={stats.avgRating} 
+                            icon={<Star size={20} />}
+                            gradient
+                        />
+                    </div>
+
+                    {/* CHARTS ROW */}
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        <div className="xl:col-span-2 card p-6 border-transparent bg-[#11141A]">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="font-bold text-white flex items-center gap-2">
+                                    <TrendingUp size={18} className="text-primary" /> Session Volume
+                                </h3>
+                                <div className="flex bg-surface p-1 rounded-lg">
+                                    <button className="px-3 py-1 text-xs font-bold text-white bg-primary rounded-md shadow-sm">Monthly</button>
+                                    <button className="px-3 py-1 text-xs font-bold text-text-muted hover:text-white transition-colors">Yearly</button>
+                                </div>
+                            </div>
+                            <TrendLineChart 
+                                data={sessionTrend} 
+                                xKey="month" 
+                                yKey="count" 
+                                lineColor="#2563EB" 
+                            />
+                        </div>
+
+                        <div className="card p-6 border-transparent bg-[#11141A]">
+                            <h3 className="font-bold text-white mb-8">Session Spread</h3>
+                            <DonutChart 
+                                data={sessionDistribution} 
+                                centerLabel={{ value: stats.completedSessions, label: 'Total' }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* SCHEDULE & EARNINGS ROW */}
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Clock size={20} className="text-primary" /> Today's Schedule
+                            </h3>
+                            <div className="card p-4 border-transparent bg-[#11141A]">
+                                <ScheduleTimeline events={mockSchedule} />
+                            </div>
+                            
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Users size={20} className="text-primary" /> Recent Patients
+                            </h3>
+                            <div className="card p-4 border-transparent bg-[#11141A]">
+                                <AvatarStrip 
+                                    people={activeCases.map((c: any) => ({
+                                        id: c.id,
+                                        name: `${c.athlete_profiles.first_name} ${c.athlete_profiles.last_name}`,
+                                        initials: `${c.athlete_profiles.first_name?.[0]}${c.athlete_profiles.last_name?.[0]}`
+                                    }))} 
+                                    hrefPrefix="/physio/cases"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <TrendingUp size={20} className="text-success" /> Practice Growth
+                            </h3>
+                            <EarningsCard 
+                                total={stats.totalEarnings} 
+                                monthly={stats.monthlyEarnings} 
+                                count={stats.completedSessions} 
+                            />
+
+                            <div className="card p-6 border-transparent bg-[#11141A]">
+                                <h3 className="font-bold text-white mb-6">Patient Feedback</h3>
+                                <RatingList items={[
+                                    { id: '1', name: 'Arjun S.', avatar: 'AS', rating: 5.0, comment: 'Exceptional diagnosis of my meniscus tear. Highly recommended.' },
+                                    { id: '2', name: 'Priya M.', avatar: 'PM', rating: 4.8, comment: 'Great recovery plan, feeling stronger already.' }
+                                ]} />
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Availability Blocker */}
                     {!profile.is_availability_set && (
@@ -83,75 +214,12 @@ export default function ApprovedDashboard({ profile, activeCases = [] }: { profi
                                 <Calendar size={32} />
                             </div>
                             <h3 className="text-xl font-bold text-white mb-2">You remain hidden from search.</h3>
-                            <p className="text-text-secondary mb-8 max-w-sm">
-                                Athletes cannot book you until you define your consultation rates and weekly schedule.
-                            </p>
-                            <Link href="/physio/availability" className="btn-primary w-full max-w-[200px] shadow-glow">
-                                Set Availability →
-                            </Link>
-                        </div>
-                    )}
-
-                    {/* Matches / Leads */}
-                    {profile.is_availability_set && activeCases.length === 0 && (
-                        <div className="card h-full flex flex-col">
-                            <div className="p-6 border-b border-border flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <Activity className="text-primary" size={20} />
-                                    Live Leads
-                                </h3>
-                                <span className="px-3 py-1 rounded-full bg-[#121417] text-xs font-medium text-text-muted border border-border">
-                                    Matching {profile.sport_specializations?.[0]}
-                                </span>
-                            </div>
-
-                            <div className="p-6 flex-1 flex flex-col items-center justify-center text-center min-h-[300px]">
-                                {/* Empty State visual for Live Leads until bookings flow is active */}
-                                <div className="w-20 h-20 rounded-full bg-surface border border-border flex items-center justify-center text-text-muted mb-4">
-                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
-                                </div>
-                                <h4 className="text-white font-bold mb-2">No active sessions yet</h4>
-                                <p className="text-sm text-text-secondary max-w-xs">
-                                    Your profile is live and actively matching with athletes in your locality.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Active Athlete Cases */}
-                    {activeCases.length > 0 && (
-                        <div className="card p-0 overflow-hidden flex flex-col h-full">
-                            <div className="p-6 border-b border-border/50 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <FileText className="text-primary" size={20} />
-                                    Active Cases
-                                </h3>
-                                <Link href="/physio/patients" className="text-sm font-medium text-primary hover:underline">
-                                    View Patients
-                                </Link>
-                            </div>
-                            <div className="flex-1 overflow-y-auto">
-                                <div className="divide-y divide-border/50">
-                                    {activeCases.map((c: any) => (
-                                        <Link key={c.id} href={`/physio/cases/${c.id}`} className="block p-6 hover:bg-surface/50 transition-colors group">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <h4 className="text-white font-bold text-lg group-hover:text-primary transition-colors">
-                                                    {c.athlete_profiles.first_name} {c.athlete_profiles.last_name}
-                                                </h4>
-                                                <ChevronRight size={16} className="text-text-muted group-hover:text-primary transition-colors" />
-                                            </div>
-                                            <div className="text-sm text-text-secondary">
-                                                <span className="text-white font-medium">{c.injury_type}</span> • {c.body_part}
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
+                            <p className="text-text-secondary mb-8 max-w-sm">Athletes cannot book you until you define your consultation rates and weekly schedule.</p>
+                            <Link href="/physio/availability" className="btn-primary w-full max-w-[200px] shadow-glow">Set Availability →</Link>
                         </div>
                     )}
 
                 </div>
-
             </div>
         </div>
     );

@@ -23,7 +23,7 @@ export default function TrendLineChart({ data, xKey, yKey, lineColor = '#2563EB'
 
     return (
         <div className="w-full" style={{ height }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2A2F3A" vertical={false} />
                     <XAxis 

@@ -15,7 +15,7 @@ export default function PhysioLayout({
     const navLinks = [
         { href: '/physio/dashboard', label: 'Overview' },
         { href: '/physio/sessions', label: 'Sessions' },
-        { href: '/physio/availability', label: 'Availability' },
+        { href: '/physio/calendar', label: 'Calendar' },
         { href: '/physio/patients', label: 'Patients' },
     ];
 
