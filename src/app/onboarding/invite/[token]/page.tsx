@@ -47,6 +47,13 @@ export default async function InviteOnboardingPage({
         );
     }
 
+    const physioProfile = Array.isArray(invite.physio_profiles)
+        ? invite.physio_profiles[0]
+        : invite.physio_profiles;
+    const timeSlot = Array.isArray(invite.time_slots)
+        ? invite.time_slots[0]
+        : invite.time_slots;
+
     const { data: { session } } = await supabase.auth.getSession();
 
     // If they are already logged in, redirect them to a confirmation endpoint or dashboard
@@ -88,7 +95,7 @@ export default async function InviteOnboardingPage({
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-white mb-3">You've been invited!</h1>
                     <p className="text-text-secondary">
-                        Dr. {invite.physio_profiles.first_name} {invite.physio_profiles.last_name} has invited you to manage your recovery journey on Athlo.
+                        Dr. {physioProfile?.first_name} {physioProfile?.last_name} has invited you to manage your recovery journey on Athlo.
                     </p>
                 </div>
 
@@ -101,22 +108,22 @@ export default async function InviteOnboardingPage({
                                 <User size={18} />
                             </div>
                             <div>
-                                <div className="text-white font-medium">Dr. {invite.physio_profiles.last_name}</div>
+                                <div className="text-white font-medium">Dr. {physioProfile?.last_name}</div>
                                 <div className="text-xs text-text-secondary">Sports Physiotherapist</div>
                             </div>
                         </div>
 
-                        {invite.time_slots && (
+                        {timeSlot && (
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-surface border border-border text-text-secondary flex items-center justify-center shrink-0">
                                     <Calendar size={18} />
                                 </div>
                                 <div>
                                     <div className="text-white font-medium">
-                                        {format(parseISO(invite.time_slots.slot_date), 'EEEE, MMMM do')}
+                                        {format(parseISO(timeSlot.slot_date), 'EEEE, MMMM do')}
                                     </div>
                                     <div className="text-xs text-text-secondary">
-                                        at {parseInt(invite.time_slots.start_time.split(':')[0]) % 12 || 12}:{invite.time_slots.start_time.split(':')[1]} {parseInt(invite.time_slots.start_time.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+                                        at {parseInt(timeSlot.start_time.split(':')[0]) % 12 || 12}:{timeSlot.start_time.split(':')[1]} {parseInt(timeSlot.start_time.split(':')[0]) >= 12 ? 'PM' : 'AM'}
                                     </div>
                                 </div>
                             </div>
