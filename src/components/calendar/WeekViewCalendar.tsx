@@ -1,24 +1,18 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+// CRITICAL: This MUST be the very first import, before any @schedule-x imports.
+// It sets globalThis.Temporal so that Schedule-X's instanceof checks
+// (e.g. event.start instanceof Temporal.ZonedDateTime) pass correctly.
+import 'temporal-polyfill/global';
+
+import { useState, useMemo, useEffect } from 'react';
 import { useCalendarApp, ScheduleXCalendar } from '@schedule-x/react';
 import { createViewWeek, createViewDay } from '@schedule-x/calendar';
 import { createEventModalPlugin } from '@schedule-x/event-modal';
+import { createEventsServicePlugin } from '@schedule-x/events-service';
 import '@schedule-x/theme-default/dist/index.css';
-import { Temporal } from 'temporal-polyfill';
 
-// Use polyfill if your environment doesn't support Temporal yet
-
-type Slot = {
-  id: string;
-  start: string; // YYYY-MM-DD HH:mm
-  end: string; // YYYY-MM-DD HH:mm
-  title: string;
-  slot_status: 'open' | 'booked' | 'pending_invite' | 'blocked';
-  consultation_mode?: string;
-  // Additional meta fields can be placed here, mapped to Schedule-X event properties or passed in an object
-  [key: string]: any;
-};
+const TIMEZONE = 'Asia/Kolkata';
 
 // Custom wrapper to render our 4 slot states uniquely
 function CustomTimeGridEvent({ calendarEvent }: { calendarEvent: any }) {
@@ -47,8 +41,30 @@ function CustomTimeGridEvent({ calendarEvent }: { calendarEvent: any }) {
   );
 }
 
+/**
+ * Build a Temporal.ZonedDateTime from a date string and time string.
+ * Uses the global Temporal (set by temporal-polyfill/global) so that
+ * Schedule-X's instanceof checks pass.
+ */
+function toZDT(dateStr: string, timeStr: string): Temporal.ZonedDateTime {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const timeParts = timeStr.split(':').map(Number);
+  let hour = timeParts[0] || 0;
+  let minute = timeParts[1] || 0;
+
+  // Handle 24:00 edge case
+  if (hour >= 24) {
+    hour = 23;
+    minute = 59;
+  }
+
+  return Temporal.PlainDateTime.from({
+    year, month, day, hour, minute,
+  }).toZonedDateTime(TIMEZONE);
+}
+
 export default function WeekViewCalendar({ initialSlots }: { initialSlots: any[] }) {
-  // Map our DB time_slots to Schedule-X events
+  // Map DB time_slots → Schedule-X events with Temporal.ZonedDateTime start/end
   const mappedEvents = useMemo(() => {
     if (!initialSlots || !Array.isArray(initialSlots)) return [];
 
@@ -56,33 +72,10 @@ export default function WeekViewCalendar({ initialSlots }: { initialSlots: any[]
       .filter(slot => slot?.slot_date && slot?.start_time && slot?.end_time)
       .map(slot => {
         try {
-          // 1. Force strict Date mapping (YYYY-MM-DD)
-          const dateOnly = String(slot.slot_date).split('T')[0];
-          const [year, month, day] = dateOnly.split('-');
-          if (!year || !month || !day) return null;
-          const safeDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-          
-          // 2. Force strict Time mapping (HH:mm)
-          const startParts = String(slot.start_time).split(':');
-          const endParts = String(slot.end_time).split(':');
-          
-          if (!startParts[0] || !endParts[0]) return null;
+          const dateOnly = String(slot.slot_date).split('T')[0]; // YYYY-MM-DD
 
-          let startHour = startParts[0].padStart(2, '0');
-          let startMin = startParts[1] ? startParts[1].padStart(2, '0') : '00';
-          let endHour = endParts[0].padStart(2, '0');
-          let endMin = endParts[1] ? endParts[1].padStart(2, '0') : '00';
-
-          // Handle 24:00 edge case -> roll back to 23:59 for Schedule-X compatibility
-          if (endHour === '24') {
-              endHour = '23';
-              endMin = '59';
-          }
-
-
-          
+          // Build title based on status
           let title = '';
-
           if (slot.status === 'open') title = 'Available';
           else if (slot.status === 'booked') title = slot.athlete_name || 'Booked';
           else if (slot.status === 'pending_invite') title = slot.client_email || 'Pending Invite';
@@ -90,53 +83,60 @@ export default function WeekViewCalendar({ initialSlots }: { initialSlots: any[]
 
           return {
             id: String(slot.id),
-            start: `${safeDate} ${startHour}:${startMin}`,
-            end: `${safeDate} ${endHour}:${endMin}`,
-            title: title,
+            start: toZDT(dateOnly, String(slot.start_time)),
+            end: toZDT(dateOnly, String(slot.end_time)),
+            title,
             slot_status: slot.status,
-            consultation_mode: slot.consultation_mode
-          } as Slot;
+            consultation_mode: slot.consultation_mode,
+          };
         } catch (err) {
-            console.error("Failed to parse slot: ", slot, err);
-            return null;
+          console.error('Failed to parse slot:', slot, err);
+          return null;
         }
-    }).filter(event => event !== null) as Slot[];
-    
-    console.log("FINAL MAPPED EVENTS: ", events);
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== null);
+
+    console.log('FINAL MAPPED EVENTS count:', events.length);
     return events;
   }, [initialSlots]);
 
-  const plugins = useMemo(() => [
-    createEventModalPlugin(),
-  ], []);
+  // Create the events service plugin once — this is the ONLY way to dynamically
+  // set/update events in Schedule-X v4 after the calendar has been initialized.
+  const [eventsService] = useState(() => createEventsServicePlugin());
 
   const calendarApp = useCalendarApp({
     views: [createViewWeek(), createViewDay()],
     events: mappedEvents,
     defaultView: createViewWeek().name,
-    isDark: true, // Match Athlo's dark theme
-    skipValidation: true, // Bypass strict Temporal validation instance checks
-    plugins: plugins,
+    isDark: true,
+    plugins: [eventsService, createEventModalPlugin()],
     dayBoundaries: {
       start: '06:00',
-      end: '22:00', // Typical working hours based on context
+      end: '22:00',
     },
     callbacks: {
-      // We can intercept drag and drop, clicks, etc. here later
       onEventClick: (calendarEvent) => {
         console.log('Event clicked', calendarEvent);
       },
       onClickDate: (date) => {
-         console.log('Empty date clicked for ad-hoc slot', date);
-      }
-    }
+        console.log('Empty date clicked for ad-hoc slot', date);
+      },
+    },
   });
+
+  // Sync events into the calendar after mount / when data changes.
+  // useCalendarApp only reads `events` on first render; this effect
+  // ensures the events service pushes them into the live calendar.
+  useEffect(() => {
+    if (mappedEvents.length > 0) {
+      eventsService.set(mappedEvents);
+    }
+  }, [mappedEvents, eventsService]);
 
   return (
     <div className="card p-0 overflow-hidden min-h-[600px] border-border/50 max-w-full">
-      {/* Schedule-X has its own internal wrapper, we configure it dark natively above */}
-      <ScheduleXCalendar 
-        calendarApp={calendarApp} 
+      <ScheduleXCalendar
+        calendarApp={calendarApp}
         customComponents={{
           timeGridEvent: CustomTimeGridEvent,
         }}

@@ -15,9 +15,10 @@ export default async function PhysioCalendarPage() {
         redirect('/auth/signin');
     }
 
-    // Since we just ran a migration and no slots exist yet, we will fetch any existing slots safely
-    // By joining on `sessions` or `client_invites` later to get names/emails for titles
-    const { data: timeSlots } = await supabase
+    // Fetch time slots with related data.
+    // Disambiguate the client_invites FK: time_slots.invite_id → client_invites.id
+    // Disambiguate the sessions FK: time_slots.session_id → sessions.id
+    const { data: timeSlots, error: slotsError } = await supabase
         .from('time_slots')
         .select(`
             id,
@@ -28,10 +29,10 @@ export default async function PhysioCalendarPage() {
             session_id,
             invite_id,
             consultation_mode,
-            client_invites (
+            client_invites!time_slots_invite_id_fkey (
                 client_email
             ),
-            sessions (
+            sessions!fk_time_slots_session (
                 consultation_mode,
                 athlete_profiles (
                     first_name,
@@ -40,6 +41,10 @@ export default async function PhysioCalendarPage() {
             )
         `)
         .eq('physio_id', user.id);
+
+    if (slotsError) {
+        console.error('[CALENDAR] Failed to fetch time_slots:', slotsError);
+    }
 
     // Flatten the payload so WeekViewCalendar can easily read name and mode
     const enrichedSlots = (timeSlots || []).map((slot: any) => {
